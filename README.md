@@ -39,7 +39,7 @@ As mentioned above, we will simplify the stack in the demo as proof of concept a
 
 ## Complete Walk Through
 
-Before 
+Before
 This shell scripts are merely for demonstration. You should set up your own CI flow using the commands in the scripts. For example, update this shell script and place in your CI server as a task triggered by your source code pull request approval for setting an integration test instant. For production, you can use this script with a dedicated role to protect the entire stack.
 
 
@@ -54,7 +54,7 @@ Don't miss the '.' before _env_setup.sh_
 #### Create a role that has S3, ElasticSearch, CloudWatch, API-Gateway, Lambda permission and add it to your local profile, called _es-demo_.
   * We will come back to add the list of resources and actions permission in cloudformation when we have time.
   * if you don't know how to do that, visit [http://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html]
-  
+
 #### Create the entire infrastructure
 Use 'demo' as environment name.
 ```
@@ -68,29 +68,40 @@ Use 'demo' as environment name.
 ```
 python csv_importer.py {elastic search endpoint}
 ```
-1. Deployment the new version
+
+#### Deployment the new version
 Simply update the ElasticSearchAWSStreamLambdaFacade class and run:
 ```
 deploy.sh demo
 ```
-This will deploy the version to dev components in your environment
-1. Promote a version to production
+This will deploy the version to dev stage in your environment
+
+#### Promote a version to production
 ```
 promote.sh demo
 ```
-1. Destroy the infrastructure
+
+#### Destroy the infrastructure
 ```
 destroy.sh demo
 ```
 
 ## In Depth:
-  * A requirement is to use Java as lambda runtime and we need the artifact in a S3 bucket before we create the lambda function. java8 runtime is not supported by CloudFormation with "ZipFile" property, so this is the reason there are two stacks instead of one. I believe there is a more graceful way to use cloud formation. I just need a bit more time to learn how it works. This can be easily achieved by aws cli or terraform.
+  * Though the initial version is far from the best practice we discussed above, we manage to:
+    1. set up entire infrastructure and deploy the initial version and make it available via api gateway within one action as matter of seconds.
+    2. dev deployment and prod deployment/promotion also happen in one command within few seconds.
+    3. it supports indefinite number of environments with a unique env key and comes with internal concept of dev and prod instances.
+    4. destroy any environment also within seconds.
+    5. this development is portable and self-contained.
+    6. the facade implementation exposes an api that's decoupled from data schema and take arbitrary query with exposing any other elasticsearch api.
+  * One requirement is to use Java as lambda runtime and we need the artifact in a S3 bucket before we create the lambda function. java8 runtime is not supported by CloudFormation with "ZipFile" property, so this is the reason there are two stacks instead of one. I believe there is a more graceful way to use cloud formation. I just need a bit more time to learn how it works. This can be easily achieved by aws cli or terraform.
   * Another original requirement is to support 3 fields on the type in an index. I thought it'd be even more useful to create a generic search facade api but decouple the persistence level schema with frontend API spec and it will support all arbitrary search terms and fields.
+  * The response can be further parsed and re-structured. The response format should rely on the actually product requirements. 
   * Pretty domain name setup in Route53 is not captured in this template
   * Authorization and security related resources are not set up entirely in this template.
   * There are many many other options for managing different stages or environments. It's not limited to the way this demo does it. It depends on actual requirements.
   * I experimented a few different ways of ingesting data into elasticsearch but didn't really spend a lot of time on it. Either elastic search's bulk api or index api approaches are slow in this demo. There is room for optimization.
-  * I didn't have time to implement the integration, regression or unit test part of this demo. I will come back and add it.
+  * Unit test suites should be implemented and triggered after every commit. Integration test suite should be automatically run after any merge of branch. Regression and any other type of post-production testing should be executed after promotion step. I didn't have time to implement the integration, regression or unit test part of this demo. I will come back and add it.
   * I don't know how to use stage variable as function binding in cloud formation's api gateway method set up. I will have to come back to this.
   * There are probably hundreds more places I can improve. Please just treat the initial version as a proof of concept
   * Here is a hidden gem for you for reading this till the end. I set up this demo on [https://api.jethrolai.com/es]. Please go and check it out. This live demo might be terminated shortly after the release of the initial version.

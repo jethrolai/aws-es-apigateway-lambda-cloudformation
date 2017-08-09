@@ -100,7 +100,7 @@ public class ElasticSearchAWSStreamLambdaFacade implements RequestStreamHandler 
             headerJson.put("Content-Type", "application/json");
             responseJson.put("statusCode", "200");
             responseJson.put("headers", headerJson);
-            responseJson.put("body", result.getJsonString());
+            responseJson.put("body", result.getJsonObject());
             logger.log("Completed.");
         }
         catch (ParseException pex) {
