@@ -45,12 +45,25 @@ public class ElasticSearchAWSStreamLambdaFacade implements RequestStreamHandler 
     /**
      * entry point of lambda function
      */
-    @SuppressWarnings("unchecked")
+    
     @Override
     public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
+        this.handle(inputStream, outputStream, context);
+    }
+
+    
+    /**
+     * This method is only to gain testability
+     * @param inputStream
+     * @param outputStream
+     * @param context
+     * @throws IOException
+     */
+    @SuppressWarnings("unchecked")
+    protected void handle(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
         // TODO validation: check if required environmental variables are provided; if not, log the error, issue
         // alert/notification and gracefully quit.
-        LambdaLogger logger = context.getLogger();
+        LambdaLogger logger = this.setUpLogger(context);
         logger.log("Initializing ElasticSearch Lambda Facade ...");
 
         logger.log("Checking required environment setup ...");
@@ -81,20 +94,19 @@ public class ElasticSearchAWSStreamLambdaFacade implements RequestStreamHandler 
             logger.log(String.format("Search will be performed on index:%s and type:%s", this.getIndex(event), this.getType(event)));
             Search search = (Search) new Search.Builder(String.format("{\"query\":%s}", queryBuilder.toString()))
                     // TODO multiple indexs and/or types can be supported
-                    .addIndex(this.getIndex(event))
-                    .addType(this.getType(event)).build();
+                    .addIndex(this.getIndex(event)).addType(this.getType(event)).build();
 
             // Initialize JsetClient as search utility
             JestClientFactory factory = new JestClientFactory();
-            HttpClientConfig clientConfig = new HttpClientConfig.Builder(esHost).multiThreaded(true)
-                    .defaultMaxTotalConnectionPerRoute(10).maxTotalConnection(20).build();
+            HttpClientConfig clientConfig = new HttpClientConfig.Builder(esHost).multiThreaded(true).defaultMaxTotalConnectionPerRoute(10)
+                    .maxTotalConnection(20).build();
             factory.setHttpClientConfig(clientConfig);
             JestClient client = factory.getObject();
 
             logger.log("Performing searching ...");
             JestResult result = client.execute(search);
             logger.log("Completed.");
-            
+
             logger.log("Constructing response ...");
             JSONObject headerJson = new JSONObject();
             headerJson.put("Content-Type", "application/json");
@@ -115,6 +127,15 @@ public class ElasticSearchAWSStreamLambdaFacade implements RequestStreamHandler 
         writer.write(responseJson.toJSONString());
         writer.close();
         logger.log("Completed.");
+    }
+    
+    /**
+     * Dummy encapsulation for unit test 
+     * @param context
+     * @return
+     */
+    protected LambdaLogger setUpLogger(Context context){
+        return context.getLogger();
     }
 
     /**

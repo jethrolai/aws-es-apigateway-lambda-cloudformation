@@ -28,6 +28,10 @@ Under certain time constraints, I will build a non-production ready demo but her
     - a lambda function can be used to process the incoming traffic
     - grok or other processor on elasticsearch cluster can also be used to further define the structure of data
   - Other resources for User friendly api url, CI/CD, monitoring and metrics etc.
+- Unit test should be run every build, every commit.
+- Dev/staging deployment should happen automatically after every pull request approval.
+- Dev/staging deployment should trigger integration tests.
+- Promote step (deploy tested artifact to prod) should be manual via CI server after integration test is done.  
 
 ### In this demo
 As mentioned above, we will simplify the stack in the demo as proof of concept approach.
@@ -96,12 +100,12 @@ destroy.sh demo
     6. the facade implementation exposes an api that's decoupled from data schema and take arbitrary query with exposing any other elasticsearch api.
   * One requirement is to use Java as lambda runtime and we need the artifact in a S3 bucket before we create the lambda function. java8 runtime is not supported by CloudFormation with "ZipFile" property, so this is the reason there are two stacks instead of one. I believe there is a more graceful way to use cloud formation. I just need a bit more time to learn how it works. This can be easily achieved by aws cli or terraform.
   * Another original requirement is to support 3 fields on the type in an index. I thought it'd be even more useful to create a generic search facade api but decouple the persistence level schema with frontend API spec and it will support all arbitrary search terms and fields.
-  * The response can be further parsed and re-structured. The response format should rely on the actually product requirements. 
+  * The response can be further parsed and re-structured. The response format should rely on the actually product requirements.
   * Pretty domain name setup in Route53 is not captured in this template
   * Authorization and security related resources are not set up entirely in this template.
   * There are many many other options for managing different stages or environments. It's not limited to the way this demo does it. It depends on actual requirements.
   * I experimented a few different ways of ingesting data into elasticsearch but didn't really spend a lot of time on it. Either elastic search's bulk api or index api approaches are slow in this demo. There is room for optimization.
-  * Unit test suites should be implemented and triggered after every commit. Integration test suite should be automatically run after any merge of branch. Regression and any other type of post-production testing should be executed after promotion step. I didn't have time to implement the integration, regression or unit test part of this demo. I will come back and add it.
+  * Unit tests triggered during every build and after every commit. Integration test suite should be automatically run after any merge of branch. Regression and any other type of post-production testing should be executed after promotion step. I didn't have time to implement the integration, regression or unit test part of this demo. I will come back and add it.
   * I don't know how to use stage variable as function binding in cloud formation's api gateway method set up. I will have to come back to this.
   * There are probably hundreds more places I can improve. Please just treat the initial version as a proof of concept
   * Here is a hidden gem for you for reading this till the end. I set up this demo on [https://api.jethrolai.com/es]. Please go and check it out. This live demo might be terminated shortly after the release of the initial version.
