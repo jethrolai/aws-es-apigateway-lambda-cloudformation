@@ -1,0 +1,2 @@
+awscli==1.11.129
+elasticsearch==5.3.*

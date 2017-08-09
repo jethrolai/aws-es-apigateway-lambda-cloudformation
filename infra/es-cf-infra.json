@@ -1,0 +1,485 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Parameters": {
+		"infraUser": {
+			"Type": "String",
+			"Default": "arn:aws:iam::902587445774:user/jlai",
+			"Description": "pass the user arn"
+		},
+		"esInstanceType": {
+			"Type": "String",
+			"Default": "t2.small.elasticsearch",
+			"Description": "ElasticSearch intance type"
+		},
+		"esGeneralFacadeLambdaHandler": {
+			"Type": "String",
+			"Default": "com.jethrolai.api.aws.ElasticSearchAWSStreamLambdaFacade::handleRequest",
+			"Description": "Change this to the name of your custom handler"
+		},
+		"lambdaArtifact": {
+			"Type": "String",
+			"Default": "aws-es-lambda-apigateway-1.0.2-SNAPSHOT.jar",
+			"Description": "The path to the local lamdba implementation jar as initial setup file. This can be changed by your SCM or CI server."
+		},
+		"env": {
+			"Type": "String",
+			"Default": "es-demo",
+			"Description": "environment key"
+		}
+	},
+	"Resources": {
+		"EsDemoInfraCfRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Principal": {
+								"AWS": {
+									"Ref": "infraUser"
+								}
+							},
+							"Action": [
+								"sts:AssumeRole"
+							]
+						}
+					]
+				},
+				"Path": "/",
+				"Policies": [
+					{
+						"PolicyName": "es-demo-infra-cf",
+						"PolicyDocument": {
+							"Version": "2012-10-17",
+							"Statement": [
+								{
+									"Effect": "Allow",
+									"Action": [
+										"s3:CreateBucket",
+										"es:CreateElasticsearchDomain"
+									],
+									"Resource": "*"
+								}
+							]
+						}
+					}
+				]
+			}
+		},
+		"EsLambdaExecutionRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Principal": {
+								"Service": [
+									"lambda.amazonaws.com"
+								]
+							},
+							"Action": [
+								"sts:AssumeRole"
+							]
+						}
+					]
+				},
+				"Path": "/",
+				"Policies": [
+					{
+						"PolicyName": "root",
+						"PolicyDocument": {
+							"Version": "2012-10-17",
+							"Statement": [
+								{
+									"Effect": "Allow",
+									"Action": [
+										"logs:*"
+									],
+									"Resource": "arn:aws:logs:*:*:*"
+								}
+							]
+						}
+					}
+				]
+			}
+		},
+		"EsDemoFacadeLamdbdaFunctionDev": {
+			"Type": "AWS::Lambda::Function",
+			"Properties": {
+				"Timeout": 15,
+				"FunctionName": {
+					"Fn::Join": [
+						"-",
+						[
+							"es-demo-lambda",
+							{
+								"Ref": "env"
+							},
+							"dev"
+						]
+					]
+				},
+				"Handler": {
+					"Ref": "esGeneralFacadeLambdaHandler"
+				},
+				"Role": {
+					"Fn::GetAtt": [
+						"EsLambdaExecutionRole",
+						"Arn"
+					]
+				},
+				"Code": {
+					"S3Bucket": {
+						"Fn::Join": [
+							"-",
+							[
+								"es-demo-lambda-artifacts",
+								{
+									"Ref": "env"
+								}
+							]
+						]
+					},
+					"S3Key": {
+						"Ref": "lambdaArtifact"
+					}
+				},
+				"Runtime": "java8",
+				"MemorySize": 256,
+				"Environment": {
+					"Variables": {
+						"ES_HOST": {
+							"Fn::GetAtt": [
+								"EsDemoEsDomain",
+								"DomainEndpoint"
+							]
+						}
+					}
+				}
+			}
+		},
+		"EsDemoFacadeLamdbdaFunctionProd": {
+			"Type": "AWS::Lambda::Function",
+			"Properties": {
+				"Timeout": 15,
+				"FunctionName": {
+					"Fn::Join": [
+						"-",
+						[
+							"es-demo-lambda",
+							{
+								"Ref": "env"
+							},
+							"prod"
+						]
+					]
+				},
+				"Handler": {
+					"Ref": "esGeneralFacadeLambdaHandler"
+				},
+				"Role": {
+					"Fn::GetAtt": [
+						"EsLambdaExecutionRole",
+						"Arn"
+					]
+				},
+				"Code": {
+					"S3Bucket": {
+						"Fn::Join": [
+							"-",
+							[
+								"es-demo-lambda-artifacts",
+								{
+									"Ref": "env"
+								}
+							]
+						]
+					},
+					"S3Key": {
+						"Ref": "lambdaArtifact"
+					}
+				},
+				"Runtime": "java8",
+				"MemorySize": 256,
+				"Environment": {
+					"Variables": {
+						"ES_HOST": {
+							"Fn::GetAtt": [
+								"EsDemoEsDomain",
+								"DomainEndpoint"
+							]
+						}
+					}
+				}
+			}
+		},
+		"EsDemoEsDomain": {
+			"Type": "AWS::Elasticsearch::Domain",
+			"Properties": {
+				"DomainName": {
+					"Fn::Join": [
+						"-",
+						[
+							"es-demo-es-domain",
+							{
+								"Ref": "env"
+							}
+						]
+					]
+				},
+				"ElasticsearchVersion": 5.3,
+				"AccessPolicies": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Principal": {
+								"AWS": "*"
+							},
+							"Action": "es:*"
+						}
+					]
+				},
+				"AdvancedOptions": {
+					"rest.action.multi.allow_explicit_index": "true"
+				},
+				"EBSOptions": {
+					"EBSEnabled": true,
+					"VolumeSize": 10,
+					"VolumeType": "standard"
+				},
+				"ElasticsearchClusterConfig": {
+					"DedicatedMasterEnabled": true,
+					"DedicatedMasterType": {
+						"Ref": "esInstanceType"
+					},
+					"DedicatedMasterCount": 2,
+					"InstanceType": {
+						"Ref": "esInstanceType"
+					},
+					"InstanceCount": 2,
+					"ZoneAwarenessEnabled": true
+				},
+				"SnapshotOptions": {
+					"AutomatedSnapshotStartHour": 0
+				}
+			}
+		},
+		"EsApiGateway": {
+			"Type": "AWS::ApiGateway::RestApi",
+			"Properties": {
+				"Name": {
+					"Fn::Join": [
+						"-",
+						[
+							"es-demo-apigateway",
+							{
+								"Ref": "env"
+							}
+						]
+					]
+				},
+				"FailOnWarnings": true
+			}
+		},
+		"LambdaPermissionDev": {
+			"Type": "AWS::Lambda::Permission",
+			"Properties": {
+				"Action": "lambda:InvokeFunction",
+				"FunctionName": {
+					"Fn::GetAtt": [
+						"EsDemoFacadeLamdbdaFunctionDev",
+						"Arn"
+					]
+				},
+				"Principal": "apigateway.amazonaws.com",
+				"SourceArn": {
+					"Fn::Join": [
+						"",
+						[
+							"arn:aws:execute-api:",
+							{
+								"Ref": "AWS::Region"
+							},
+							":",
+							{
+								"Ref": "AWS::AccountId"
+							},
+							":",
+							{
+								"Ref": "EsApiGateway"
+							},
+							"/*/GET/es"
+						]
+					]
+				}
+			}
+		},
+		"LambdaPermissionProd": {
+			"Type": "AWS::Lambda::Permission",
+			"Properties": {
+				"Action": "lambda:InvokeFunction",
+				"FunctionName": {
+					"Fn::GetAtt": [
+						"EsDemoFacadeLamdbdaFunctionProd",
+						"Arn"
+					]
+				},
+				"Principal": "apigateway.amazonaws.com",
+				"SourceArn": {
+					"Fn::Join": [
+						"",
+						[
+							"arn:aws:execute-api:",
+							{
+								"Ref": "AWS::Region"
+							},
+							":",
+							{
+								"Ref": "AWS::AccountId"
+							},
+							":",
+							{
+								"Ref": "EsApiGateway"
+							},
+							"/*/GET/es"
+						]
+					]
+				}
+			}
+		},
+		"EsApiResource": {
+			"Type": "AWS::ApiGateway::Resource",
+			"Properties": {
+				"RestApiId": {
+					"Ref": "EsApiGateway"
+				},
+				"ParentId": {
+					"Fn::GetAtt": [
+						"EsApiGateway",
+						"RootResourceId"
+					]
+				},
+				"PathPart": "es"
+			}
+		},
+		"EsApiGetMethod": {
+			"DependsOn": [
+				"LambdaPermissionDev",
+				"LambdaPermissionProd"
+			],
+			"Type": "AWS::ApiGateway::Method",
+			"Properties": {
+				"AuthorizationType": "NONE",
+				"HttpMethod": "GET",
+				"ResourceId": {
+					"Ref": "EsApiResource"
+				},
+				"RestApiId": {
+					"Ref": "EsApiGateway"
+				},
+				"MethodResponses": [
+					{
+						"StatusCode": 200
+					}
+				],
+				"Integration": {
+					"Type": "AWS",
+					"IntegrationHttpMethod": "GET",
+					"Uri": {
+						"Fn::Join": [
+							"",
+							[
+								"arn:aws:apigateway:",
+								{
+									"Ref": "AWS::Region"
+								},
+								":lambda:path/2015-03-31/functions/",
+								{
+									"Fn::GetAtt": [
+										"EsDemoFacadeLamdbdaFunctionDev",
+										"Arn"
+									]
+								},
+								"/invocations"
+							]
+						]
+					},
+					"IntegrationResponses": [
+						{
+							"StatusCode": 200
+						}
+					]
+				}
+			}
+		},
+		"EsApiDeployDev": {
+			"Type": "AWS::ApiGateway::Deployment",
+			"DependsOn": "EsApiGetMethod",
+			"Properties": {
+				"RestApiId": {
+					"Ref": "EsApiGateway"
+				},
+				"StageName": "dev"
+			}
+		},
+		"EsApiDeployProd": {
+			"Type": "AWS::ApiGateway::Deployment",
+			"DependsOn": "EsApiGetMethod",
+			"Properties": {
+				"RestApiId": {
+					"Ref": "EsApiGateway"
+				},
+				"StageName": "prod"
+			}
+		},
+		"EsApiGatewayCloudWatchLogsRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+				"AssumeRolePolicyDocument": {
+					"Version": "2012-10-17",
+					"Statement": [
+						{
+							"Effect": "Allow",
+							"Principal": {
+								"Service": [
+									"apigateway.amazonaws.com"
+								]
+							},
+							"Action": [
+								"sts:AssumeRole"
+							]
+						}
+					]
+				},
+				"Policies": [
+					{
+						"PolicyName": "ApiGatewayLogsPolicy",
+						"PolicyDocument": {
+							"Version": "2012-10-17",
+							"Statement": [
+								{
+									"Effect": "Allow",
+									"Action": [
+										"logs:CreateLogGroup",
+										"logs:CreateLogStream",
+										"logs:DescribeLogGroups",
+										"logs:DescribeLogStreams",
+										"logs:PutLogEvents",
+										"logs:GetLogEvents",
+										"logs:FilterLogEvents"
+									],
+									"Resource": "*"
+								}
+							]
+						}
+					}
+				]
+			}
+		}
+	}
+}
