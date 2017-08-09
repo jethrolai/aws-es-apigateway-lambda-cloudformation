@@ -108,7 +108,7 @@ destroy.sh demo
   * Unit tests triggered during every build and after every commit. Integration test suite should be automatically run after any merge of branch. Regression and any other type of post-production testing should be executed after promotion step. I didn't have time to implement the integration, regression or unit test part of this demo. I will come back and add it.
   * I haven't figured out how to use stage variable as function binding in cloud formation's api gateway method set up. I will have to come back to this.
   * There are probably hundreds more places I can improve. Please just treat the initial version as a proof of concept
-  * Here is a hidden gem for you for reading this till the end. I set up this demo on [https://api.jethrolai.com/aws/es]. Please go and check it out. This live demo might be terminated shortly after the release of the initial version.
+  * Here is a hidden gem for you for reading this till the end. I set up this demo on [https://api.jethrolai.com/aws/es?SPONS_DFE_LOC_US_STATE=CA&PLAN_NAME=EMPLOYEE]. Please go and check it out. This live demo might be terminated shortly after the release of the initial version.
   * Wanna see how it works? Simply do `curl https://api.jethrolai.com/aws/es?SPONS_DFE_LOC_US_STATE=CA`
 
 ## Collaboration
