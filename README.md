@@ -38,29 +38,30 @@ As mentioned above, we will simplify the stack in the demo as proof of concept a
 
 
 ## Complete Walk Through
-Before you start, make sure you have maven python and virtualenv installed because we will be using the newest version of awscli in this demo.
-Dependency versions will be provided in the future.
-<aside class="notice">
+
+Before 
 This shell scripts are merely for demonstration. You should set up your own CI flow using the commands in the scripts. For example, update this shell script and place in your CI server as a task triggered by your source code pull request approval for setting an integration test instant. For production, you can use this script with a dedicated role to protect the entire stack.
-</aside>
 
-1. set up your development environment
+
+#### set up your development environment
+You need python and virtualenv installed because we will be using the newest version of awscli in this demo.
+Dependency versions will be provided in the future.
+Don't miss the '.' before _env_setup.sh_
 ```
-virtuanlenv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-brew install maven
+. env_setup.sh
 ```
 
-1. Create a role that has S3, ElasticSearch, CloudWatch, API-Gateway, Lambda permission and add it to your local profile, called _es-demo_.
+#### Create a role that has S3, ElasticSearch, CloudWatch, API-Gateway, Lambda permission and add it to your local profile, called _es-demo_.
   * We will come back to add the list of resources and actions permission in cloudformation when we have time.
   * if you don't know how to do that, visit [http://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html]
-1. Create the entire infrastructure
+  
+#### Create the entire infrastructure
 Use 'demo' as environment name.
 ```
 ./init.sh demo
 ```
-1. Ingest data
+
+#### Ingest data
   * Wait till the elastic search cloud is up
   * this will take a while. I implemented this to upload data in batch so even when you terminate the process at some point, the data will be partially imported.  
   * You can create a route53 alias point to the new elastic search endpoint so the python script can be integrated into the same dev flow based on environment key
