@@ -48,20 +48,7 @@ public class ElasticSearchAWSStreamLambdaFacade implements RequestStreamHandler 
     
     @Override
     public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
-        this.handle(inputStream, outputStream, context);
-    }
-
-    
-    /**
-     * This method is only to gain testability
-     * @param inputStream
-     * @param outputStream
-     * @param context
-     * @throws IOException
-     */
-    @SuppressWarnings("unchecked")
-    protected void handle(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
-        // TODO validation: check if required environmental variables are provided; if not, log the error, issue
+    	// TODO validation: check if required environmental variables are provided; if not, log the error, issue
         // alert/notification and gracefully quit.
         LambdaLogger logger = this.setUpLogger(context);
         logger.log("Initializing ElasticSearch Lambda Facade ...");
@@ -81,6 +68,8 @@ public class ElasticSearchAWSStreamLambdaFacade implements RequestStreamHandler 
         // Parse incoming request and set up search term
         try {
             JSONObject event = (JSONObject) parser.parse(reader);
+            logger.log("Event:\n\n");
+            logger.log(((JSONObject) event).toString());
             if (event.get(QUERY_PARAMETERS) != null) {
                 JSONObject queryParameters = (JSONObject) event.get(QUERY_PARAMETERS);
                 logger.log(String.format("Setting query terms ..."));
@@ -89,6 +78,8 @@ public class ElasticSearchAWSStreamLambdaFacade implements RequestStreamHandler 
                     logger.log(String.format("  query term: \"%s:%s\" added.", k, v));
                 });
                 logger.log(String.format("Setting query terms completed!"));
+            } else {
+                logger.log("No query parameter provided.");
             }
 
             logger.log(String.format("Search will be performed on index:%s and type:%s", this.getIndex(event), this.getType(event)));
@@ -112,7 +103,8 @@ public class ElasticSearchAWSStreamLambdaFacade implements RequestStreamHandler 
             headerJson.put("Content-Type", "application/json");
             responseJson.put("statusCode", "200");
             responseJson.put("headers", headerJson);
-            responseJson.put("body", result.getJsonObject());
+            responseJson.put("body", result.getJsonString());
+            responseJson.put("isBase64Encoded", "true");
             logger.log("Completed.");
         }
         catch (ParseException pex) {
@@ -127,6 +119,19 @@ public class ElasticSearchAWSStreamLambdaFacade implements RequestStreamHandler 
         writer.write(responseJson.toJSONString());
         writer.close();
         logger.log("Completed.");
+    }
+
+    
+    /**
+     * This method is only to gain testability
+     * @param inputStream
+     * @param outputStream
+     * @param context
+     * @throws IOException
+     */
+    @SuppressWarnings("unchecked")
+    protected void handle(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
+        
     }
     
     /**
