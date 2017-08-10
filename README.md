@@ -102,6 +102,7 @@ destroy.sh demo
   * Another original requirement is to support 3 fields on the type in an index. I thought it'd be even more useful to create a generic search facade api but decouple the persistence level schema with frontend API spec and it will support all arbitrary search terms and fields.
   * The response can be further parsed and re-structured. The response format should rely on the actually product requirements.
   * Pretty domain name setup in Route53 is not captured in this template
+  * I am aware that S3 or other place is better for the test data instead of placing in the source code repo. I will come back to this later. 
   * Authorization and security related resources are not set up entirely in this template.
   * There are many many other options for managing different stages or environments. It's not limited to the way this demo does it. It depends on actual requirements.
   * I experimented a few different ways of ingesting data into elasticsearch but didn't really spend a lot of time on it. Either elastic search's bulk api or index api approaches are slow in this demo. There is room for optimization.
