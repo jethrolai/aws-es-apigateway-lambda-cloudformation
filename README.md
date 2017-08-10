@@ -1,5 +1,12 @@
 # AWS API Gateway + Lambda + ElasticSearch Service Demo
 This project is to demo a simple general search facade api built in AWS that takes arbitrary query and perform the search on an AWS elasticsearch cluster backend.  
+
+##### Live Demo
+Host: [https://api.jethrolai.com/aws/es]  
+Try some query:
+[https://api.jethrolai.com/aws/es?SPONS_DFE_LOC_US_STATE=CA&PLAN_NAME=EMPLOYEE]
+
+
 #### \[ Do not use this in production !!\]
 
 ## Goals
@@ -8,7 +15,7 @@ This project is to demo a simple general search facade api built in AWS that tak
 1. Expose the api via API Gateway
 1. Manage CI/CD flow from development to production
 
-### Best Practice
+## Best Practice
 Under certain time constraints, I will build a non-production ready demo but here is a list of opinionated best practice over demo implementation
 
 - a CloudFormation template to set up the infrastructure which includes:
@@ -33,7 +40,7 @@ Under certain time constraints, I will build a non-production ready demo but her
 - Dev/staging deployment should trigger integration tests.
 - Promote step (deploy tested artifact to prod) should be manual via CI server after integration test is done.  
 
-### In this demo
+## In this demo
 As mentioned above, we will simplify the stack in the demo as proof of concept approach.
 - It's my first time ever using CloudFormation and I found it took me a bit time to learn all of the resource specs aforementioned and fine tune the template and I had only few hours to work on the initial version of this thing. Therefore, I ran out of time so the template only captures about 90% of the infrastructure and integration. My demo infrastructure is set up by CloudFormation with a few manual touches. I might come back and finish it up or use terraform in the next version.
 - No KMS encrypted for lambda
@@ -46,47 +53,46 @@ As mentioned above, we will simplify the stack in the demo as proof of concept a
 Before
 This shell scripts are merely for demonstration. You should set up your own CI flow using the commands in the scripts. For example, update this shell script and place in your CI server as a task triggered by your source code pull request approval for setting an integration test instant. For production, you can use this script with a dedicated role to protect the entire stack.
 
-
-#### Set up your development environment
+#### 1. Set up your development environment
 You need python and virtualenv installed because we will be using the newest version of awscli in this demo.
 Dependency versions will be provided in the future.
 Don't miss the '.' before _env_setup.sh_
-```
+```bash
 . env_setup.sh
 ```
 
-#### Create a role that has S3, ElasticSearch, CloudWatch, API-Gateway, Lambda permission and add it to your local profile, called _es-demo_.
+#### 2. Create a role that has S3, ElasticSearch, CloudWatch, API-Gateway, Lambda permission and add it to your local profile, called _es-demo_.
   * We will come back to add the list of resources and actions permission in cloudformation when we have time.
   * if you don't know how to do that, visit [http://docs.aws.amazon.com/cli/latest/userguide/cli-multiple-profiles.html]
 
-#### Create the entire infrastructure
+#### 3. Create the entire infrastructure
 Use 'demo' as environment name.
-```
+```bash
 ./init.sh demo
 ```
 
-#### Ingest data
+#### 4. Ingest data
   * Wait till the elastic search cloud is up
   * this will take a while. I implemented this to upload data in batch so even when you terminate the process at some point, the data will be partially imported.  
   * You can create a route53 alias point to the new elastic search endpoint so the python script can be integrated into the same dev flow based on environment key
-```
+```bash
 python csv_importer.py {elastic search endpoint}
 ```
 
-#### Deployment the new version
+#### 5. Deployment the new version
 Simply update the ElasticSearchAWSStreamLambdaFacade class and run:
-```
+```bash
 deploy.sh demo
 ```
 This will deploy the version to dev stage in your environment
 
-#### Promote a version to production
-```
+#### 6. Promote a version to production
+```bash
 promote.sh demo
 ```
 
-#### Destroy the infrastructure
-```
+#### 7. Destroy the infrastructure
+```bash
 destroy.sh demo
 ```
 
