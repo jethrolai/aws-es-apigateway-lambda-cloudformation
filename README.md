@@ -47,7 +47,7 @@ Before
 This shell scripts are merely for demonstration. You should set up your own CI flow using the commands in the scripts. For example, update this shell script and place in your CI server as a task triggered by your source code pull request approval for setting an integration test instant. For production, you can use this script with a dedicated role to protect the entire stack.
 
 
-#### set up your development environment
+#### Set up your development environment
 You need python and virtualenv installed because we will be using the newest version of awscli in this demo.
 Dependency versions will be provided in the future.
 Don't miss the '.' before _env_setup.sh_
